@@ -5,7 +5,7 @@ function App() {
   const [items, setItems] = useState([]);
   const [input, setInput] = useState('');
   const [editId, setEditId] = useState(null);
-  
+
 
   const handleAddOrUpdate = () => {
     if (!input.trim()) return;
@@ -35,7 +35,7 @@ function App() {
 
   return (
     <div className="app-container">
-      <h1>React CRUD Application</h1>
+      <h1>React CRUD Application - 01</h1>
 
       <div className="input-group">
         <input
