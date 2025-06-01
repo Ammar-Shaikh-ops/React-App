@@ -35,7 +35,7 @@ function App() {
 
   return (
     <div className="app-container">
-      <h1>React CRUD Application - 03</h1>
+      <h1>React CRUD Application</h1>
 
       <div className="input-group">
         <input
