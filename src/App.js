@@ -1,19 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import './App.css';
 
-// Simulated API
+// In-memory data store
+let mockData = [];
+
 const api = {
   fetchItems: () =>
-    new Promise((resolve) =>
-      setTimeout(() => resolve(JSON.parse(localStorage.getItem('items') || '[]')), 500)
-    ),
+    new Promise((resolve) => setTimeout(() => resolve([...mockData]), 500)),
 
   addItem: (item) =>
     new Promise((resolve) => {
       setTimeout(() => {
-        const items = JSON.parse(localStorage.getItem('items') || '[]');
-        const newItems = [...items, item];
-        localStorage.setItem('items', JSON.stringify(newItems));
+        mockData = [...mockData, item];
         resolve(item);
       }, 500);
     }),
@@ -21,11 +19,9 @@ const api = {
   updateItem: (updatedItem) =>
     new Promise((resolve) => {
       setTimeout(() => {
-        const items = JSON.parse(localStorage.getItem('items') || '[]');
-        const newItems = items.map(item =>
+        mockData = mockData.map(item =>
           item.id === updatedItem.id ? updatedItem : item
         );
-        localStorage.setItem('items', JSON.stringify(newItems));
         resolve(updatedItem);
       }, 500);
     }),
@@ -33,9 +29,7 @@ const api = {
   deleteItem: (id) =>
     new Promise((resolve) => {
       setTimeout(() => {
-        const items = JSON.parse(localStorage.getItem('items') || '[]');
-        const newItems = items.filter(item => item.id !== id);
-        localStorage.setItem('items', JSON.stringify(newItems));
+        mockData = mockData.filter(item => item.id !== id);
         resolve(id);
       }, 500);
     }),
@@ -48,11 +42,10 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  // Load items from API on mount
   useEffect(() => {
     setLoading(true);
     api.fetchItems()
-      .then(data => setItems(data))
+      .then(setItems)
       .catch(() => setError('Failed to load items'))
       .finally(() => setLoading(false));
   }, []);
@@ -70,12 +63,10 @@ function App() {
 
     try {
       if (editId !== null) {
-        // Update
         const updatedItem = { id: editId, text: input };
         await api.updateItem(updatedItem);
         setItems(items.map(item => (item.id === editId ? updatedItem : item)));
       } else {
-        // Add
         const newItem = { id: Date.now(), text: input };
         await api.addItem(newItem);
         setItems([...items, newItem]);
@@ -117,8 +108,8 @@ function App() {
           type="text"
           placeholder="Enter item"
           value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => { if (e.key === 'Enter') handleAddOrUpdate(); }}
+          onChange={e => setInput(e.target.value)}
+          onKeyDown={e => { if (e.key === 'Enter') handleAddOrUpdate(); }}
           disabled={loading}
         />
         <button onClick={handleAddOrUpdate} disabled={loading || !input.trim()}>
