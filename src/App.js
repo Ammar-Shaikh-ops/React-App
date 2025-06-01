@@ -1,39 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import './App.css';
 
-// In-memory data store
-let mockData = [];
-
-const api = {
-  fetchItems: () =>
-    new Promise((resolve) => setTimeout(() => resolve([...mockData]), 500)),
-
-  addItem: (item) =>
-    new Promise((resolve) => {
-      setTimeout(() => {
-        mockData = [...mockData, item];
-        resolve(item);
-      }, 500);
-    }),
-
-  updateItem: (updatedItem) =>
-    new Promise((resolve) => {
-      setTimeout(() => {
-        mockData = mockData.map(item =>
-          item.id === updatedItem.id ? updatedItem : item
-        );
-        resolve(updatedItem);
-      }, 500);
-    }),
-
-  deleteItem: (id) =>
-    new Promise((resolve) => {
-      setTimeout(() => {
-        mockData = mockData.filter(item => item.id !== id);
-        resolve(id);
-      }, 500);
-    }),
-};
+const API_URL = 'https://jsonplaceholder.typicode.com/todos?_limit=5'; // fetch first 5 todos
 
 function App() {
   const [items, setItems] = useState([]);
@@ -42,11 +10,23 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
+  // Fetch real data on mount
   useEffect(() => {
     setLoading(true);
-    api.fetchItems()
-      .then(setItems)
-      .catch(() => setError('Failed to load items'))
+    fetch(API_URL)
+      .then(res => {
+        if (!res.ok) throw new Error('Network response was not ok');
+        return res.json();
+      })
+      .then(data => {
+        // Map fetched data to {id, text}
+        const mappedItems = data.map(todo => ({
+          id: todo.id,
+          text: todo.title,
+        }));
+        setItems(mappedItems);
+      })
+      .catch(() => setError('Failed to load items from API'))
       .finally(() => setLoading(false));
   }, []);
 
@@ -55,27 +35,19 @@ function App() {
     setEditId(null);
   };
 
-  const handleAddOrUpdate = async () => {
+  const handleAddOrUpdate = () => {
     if (!input.trim()) return;
 
-    setLoading(true);
-    setError(null);
-
-    try {
-      if (editId !== null) {
-        const updatedItem = { id: editId, text: input };
-        await api.updateItem(updatedItem);
-        setItems(items.map(item => (item.id === editId ? updatedItem : item)));
-      } else {
-        const newItem = { id: Date.now(), text: input };
-        await api.addItem(newItem);
-        setItems([...items, newItem]);
-      }
+    if (editId !== null) {
+      // Update locally only (no real API update)
+      const updatedItem = { id: editId, text: input };
+      setItems(items.map(item => (item.id === editId ? updatedItem : item)));
       resetForm();
-    } catch {
-      setError('Operation failed. Please try again.');
-    } finally {
-      setLoading(false);
+    } else {
+      // Add locally only (no real API add)
+      const newItem = { id: Date.now(), text: input };
+      setItems([...items, newItem]);
+      resetForm();
     }
   };
 
@@ -85,18 +57,10 @@ function App() {
     setEditId(id);
   };
 
-  const handleDelete = async (id) => {
-    setLoading(true);
-    setError(null);
-    try {
-      await api.deleteItem(id);
-      setItems(items.filter(i => i.id !== id));
-      if (editId === id) resetForm();
-    } catch {
-      setError('Delete failed. Please try again.');
-    } finally {
-      setLoading(false);
-    }
+  const handleDelete = (id) => {
+    // Delete locally only (no real API delete)
+    setItems(items.filter(i => i.id !== id));
+    if (editId === id) resetForm();
   };
 
   return (
@@ -108,8 +72,8 @@ function App() {
           type="text"
           placeholder="Enter item"
           value={input}
-          onChange={e => setInput(e.target.value)}
-          onKeyDown={e => { if (e.key === 'Enter') handleAddOrUpdate(); }}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={(e) => { if (e.key === 'Enter') handleAddOrUpdate(); }}
           disabled={loading}
         />
         <button onClick={handleAddOrUpdate} disabled={loading || !input.trim()}>
