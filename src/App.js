@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import './App.css';
 
-const API_URL = 'https://jsonplaceholder.typicode.com/todos?_limit=5'; // fetch first 5 todos
+const API_URL = 'https://randomuser.me/api/?results=5&nat=us'; // 5 random users, US nationality
 
 function App() {
   const [items, setItems] = useState([]);
@@ -10,7 +10,7 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  // Fetch real data on mount
+  // Fetch English names on mount
   useEffect(() => {
     setLoading(true);
     fetch(API_URL)
@@ -19,14 +19,13 @@ function App() {
         return res.json();
       })
       .then(data => {
-        // Map fetched data to {id, text}
-        const mappedItems = data.map(todo => ({
-          id: todo.id,
-          text: todo.title,
+        const mappedItems = data.results.map((user, index) => ({
+          id: index + 1,
+          text: `${user.name.first} ${user.name.last}`,
         }));
         setItems(mappedItems);
       })
-      .catch(() => setError('Failed to load items from API'))
+      .catch(() => setError('Failed to load names from API'))
       .finally(() => setLoading(false));
   }, []);
 
@@ -39,12 +38,10 @@ function App() {
     if (!input.trim()) return;
 
     if (editId !== null) {
-      // Update locally only (no real API update)
       const updatedItem = { id: editId, text: input };
       setItems(items.map(item => (item.id === editId ? updatedItem : item)));
       resetForm();
     } else {
-      // Add locally only (no real API add)
       const newItem = { id: Date.now(), text: input };
       setItems([...items, newItem]);
       resetForm();
@@ -58,7 +55,6 @@ function App() {
   };
 
   const handleDelete = (id) => {
-    // Delete locally only (no real API delete)
     setItems(items.filter(i => i.id !== id));
     if (editId === id) resetForm();
   };
@@ -70,7 +66,7 @@ function App() {
       <div className="input-group">
         <input
           type="text"
-          placeholder="Enter item"
+          placeholder="Enter name"
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => { if (e.key === 'Enter') handleAddOrUpdate(); }}
@@ -85,7 +81,7 @@ function App() {
 
       {loading && <p className="loading">Loading...</p>}
 
-      {!loading && items.length === 0 && <p className="empty-msg">No items yet. Add some!</p>}
+      {!loading && items.length === 0 && <p className="empty-msg">No names yet. Add some!</p>}
 
       <ul className="item-list">
         {items.map(item => (
